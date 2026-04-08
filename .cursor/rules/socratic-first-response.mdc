@@ -1,0 +1,10 @@
+---
+description: Cursor entry adapter for canonical Socratic rule
+alwaysApply: true
+---
+
+# Cursor Entry Adapter
+
+Use adapter:
+
+- `ai/adapters/cursor/rules/socratic-first-response.mdc`
