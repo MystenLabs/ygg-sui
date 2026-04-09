@@ -461,7 +461,7 @@ section.day-divider p {
 
 # Sui & Move Bootcamp
 
-Two days. Zero hand-holding. Ship on-chain.
+Two days. Build. Ship on-chain.
 
 ---
 
@@ -481,7 +481,7 @@ _Publishing your first move package_
 - Module 3: Structs, Ownership, & Abilities
 - Module 4: Test Modules
 - Module 5: Deployment & CLI
-- Module 6: Hackathon Reveal
+- Hackathon Reveal + Homework
 
 </div>
 <div class="col">
@@ -492,52 +492,7 @@ _Bridging Move to the World_
 
 - Module 1: Sui TypeScript SDK
 - Module 2: Sui TS gRPC Read + Write Queries
-- Module 3: Bootstrap a Sui dApp Repo (Sui dApp Next.js Template)
-
-</div>
-</div>
-
----
-
-<!-- _class: list-right -->
-
-<div class="content">
-
-# Pre-Flight
-
-Get ready before Day 1.
-
-Zero setup friction on the day means **more time building.**
-
-</div>
-
-<div class="cards">
-<div class="card">
-
-#### Install Sui CLI
-
-`brew install sui` or download from docs.sui.io
-
-</div>
-<div class="card">
-
-#### Install Move Analyzer
-
-VS Code extension for syntax + type checking
-
-</div>
-<div class="card">
-
-#### Install Sui Wallet
-
-Browser extension — connect to Testnet
-
-</div>
-<div class="card">
-
-#### Vibe Check
-
-Mint 1 Testnet SUI from faucet. Send it to a peer.
+- Module 3: Bootstrap a Sui dApp Repo (Sui dApp Vite + React Template)
 
 </div>
 </div>
@@ -562,7 +517,7 @@ _Module 1_
 
 ---
 
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # Sui & Move in 60 Seconds
 
@@ -668,7 +623,54 @@ Decentralized **blob storage** network — cheap, durable large files with **onc
 
 ---
 
-<!-- _class: cols-2-center -->
+# What makes Sui different?
+
+- **Object-centric model (not account-centric):** assets are real on-chain objects with explicit ownership, not just rows in shared contract storage.
+- **Parallel by design:** transactions touching different objects can execute in parallel, improving throughput without forcing every app into one global bottleneck.
+- **Fast finality + low-latency UX:** many common transactions settle quickly, making app interactions feel closer to Web2 expectations.
+- **Safer smart contracts with Move:** resource-oriented types and strict ownership rules reduce common classes of contract bugs.
+- **Better onboarding primitives:** sponsored transactions and zkLogin-style flows make mainstream user experiences more practical.
+
+---
+
+<!-- _class: cols-2-left -->
+
+# Account Model vs Object Model
+
+_Why Sui is different from other blockchains?_
+
+<div class="grid">
+<div class="col">
+
+### Ethereum-style (account-centric)
+
+- state is attached to accounts and contract storage slots
+- balances and mappings are looked up from shared global state
+- common pattern: "read account/storage, update value, write back"
+
+```text
+address -> contract storage -> balances[address] = amount
+```
+
+</div>
+<div class="col">
+
+### Sui (object-centric)
+
+- assets are first-class on-chain objects with IDs
+- ownership is explicit: address-owned, shared, or immutable
+- transactions directly use object references as inputs/outputs
+
+```text
+object_id -> typed object -> owner + data + version
+```
+
+</div>
+</div>
+
+---
+
+<!-- _class: cols-2-left -->
 
 # Assets (traditionally, vs the Sui way)
 
@@ -677,7 +679,7 @@ _From bank balances to physical items_
 <div class="grid">
 <div class="col">
 
-### Bank balance - Account based
+### Bank balance - Traditional
 
 **Alice** — she only ever sees an app. The “money” lives elsewhere.
 
@@ -686,7 +688,7 @@ _From bank balances to physical items_
  ╭────────────────────────────────╮
  │  TABLE: retail_balances        │
  ├────────────────────────────────┤
- │  alice      $      4,250.00    │
+ │  alice      $      4,000.00    │
  │  bob        $      1,100.00    │
  │  … millions more rows …        │
  ╰────────────────────────────────╯
@@ -699,7 +701,7 @@ _From bank balances to physical items_
 </div>
 <div class="col">
 
-### Physical Items - Object based
+### Physical Items - Sui
 
 **Bob** — **cash in his wallet**: ones and fives he can **spread out and count** — not a line in anyone’s ledger.
 
@@ -810,24 +812,53 @@ Why this matters: state type determines performance profile, access model, and A
 # Mysticeti Consensus Protocol (And Parallelism)
 
 ```text
-+----------------------+
-|     Tx submitted     |
-+----------------------+
-           |
+┌──────────────────────┐
+│     Tx submitted     │
+└──────────────────────┘
+           │
            v
-+--------------------------------------+
-| Touches any shared object in inputs? |
-+--------------------------------------+
-      | No                        | Yes
-      v                           v
-+--------------------+     +----------------------+
-| Instant Validation |     |   Consensus Path     |
-| independent owned  |     | global ordering req. |
-| object set         |     | for shared mutation  |
-+--------------------+     +----------------------+
+┌──────────────────────────────────────┐
+│ Touches any shared object in inputs? │
+└──────────────────────────────────────┘
+      │          ┌────────────────────┐
+      ├─ No  ──> │ Instant Validation │
+      │          └────────────────────┘
+      │          ┌──────────────────────┐
+      └─ Yes ──> │   Consensus Path     │
+                 │ global ordering req. │
+                 │ for shared mutation  │
+                 └──────────────────────┘
 ```
 
 Rule: shared object touched -> consensus path; no shared object touched -> Instant validation.
+
+---
+
+# Parallelism in Sui
+
+```text
+                 SAME BLOCK WINDOW (arrives at the same time)
+
+Lane A -  Shared object lane (needs ordering / consensus)
+          Tx 001: User   1 -> mutate SharedCounter
+          Tx 002: User   2 -> mutate SharedCounter
+          ...
+          Tx 999: User 999 -> mutate SharedCounter
+          Tx1000: User1000 -> mutate SharedCounter
+                  │
+                  └─> must be sequenced because all touch the SAME shared object
+
+
+Lane B -  Owned object lane (independent / fast path)
+          Tx Z: Alice -> mutate AliceOwnedProfile only
+                │
+                └─> validated and executed in a different lane
+                    (does not wait behind SharedCounter traffic)
+```
+
+- 1000 users contending on one shared object create a serialization bottleneck in that shared lane.
+- A transaction that only touches owned objects can still proceed on its own lane in parallel.
+- Design implication: keep user-specific state owned; share only state that truly needs coordination.
 
 ---
 
@@ -909,7 +940,7 @@ Compiler view: `Move.toml -> modules -> bytecode -> publish to package address`.
 
 ---
 
-# Packages, Modules, and Addresses
+# Packages, Modules, and Members
 
 - A published package has an on-chain address (for example: `0xabc...`).
 - Modules live inside that package: `0xabc...::hero`.
@@ -1006,6 +1037,32 @@ Key idea:
 
 ---
 
+# Struct
+
+```rust
+public struct Hero has key, store {
+    id: UID,
+    name: String,
+    level: u8,
+}
+```
+
+```rust
+public fun mint_hero(name: String, ctx: &mut TxContext): Hero {
+    Hero {
+        id: object::new(ctx), // runtime generates unique object ID
+        name,
+        level: 1,
+    }
+}
+```
+
+- `struct` only defines the data model/type.
+- `object::new(ctx)` is called at creation time to produce a fresh `UID`.
+- `ctx` (`&mut TxContext`) is injected by the runtime per transaction.
+
+---
+
 # Control Flow Expressions
 
 1. if else
@@ -1050,6 +1107,7 @@ let mut n = 0;
 loop {
     if (n == 5) break;
     n = n + 1;
+    TODO check if this is correect or we need asterisk reference
 };
 ```
 
@@ -1071,8 +1129,8 @@ Who can call what:
 | Signature                 | Internal (same module) | External Move (other modules/packages) | Transaction (PTB/CLI/SDK) |
 | ------------------------- | ---------------------- | -------------------------------------- | ------------------------- |
 | `fun f()`                 | Yes                    | No                                     | No                        |
-| `public(package) fun f()` | Yes                    | Same package only                      | No                        |
 | `public fun f()`          | Yes                    | Yes                                    | Yes                       |
+| `public(package) fun f()` | Yes                    | Same package only                      | No                        |
 | `entry fun f()`           | Yes                    | No                                     | Yes                       |
 
 ---
@@ -1126,11 +1184,10 @@ public fun add_cert_into_my_passport(
 
 When a PTB calls your Move function, validators + VM checks include:
 
-- function exists and is callable (`entry`/visibility path is valid)
-- argument count and types match the signature exactly
-- object inputs exist at the referenced version
+- function exists
+- argument count and types matches
+- object inputs actually exist
 - **sender/ownership permissions match object kind (owned/shared/immutable)**
-- the same object cannot be used in conflicting ways in one tx (e.g., mutable+mutable, mutable+move, or move-then-reuse)
 
 These checks happen before entering the function body.  
 If any check fails, the transaction is rejected and zero lines inside the function execute.
@@ -1345,25 +1402,25 @@ Use `as` only when renaming improves readability or avoids name conflicts.
 
 ---
 
-# Dot Notation calling
+# Dot Notation Function Calls
 
 ```rust
-use my_pkg::hero; // imports module namespace `hero`
-
 public fun train(h: &mut Hero) {
     hero::level_up(&mut h); //Traditional way
     h.level_up(); //Easier way
 }
 ```
 
-because of
+Rules:
 
 ```rust
+//1.
 public fun level_up(hero: &mut Hero,...) {
     ...
     hero.level = hero.level + 1;
     ...
 }
+//2. Hero is declared in the same module as the function you're calling
 ```
 
 </div>
@@ -2012,19 +2069,17 @@ _Module 5_
 **From local setup to on-chain interaction.**
 
 ```bash
-# Create a new wallet address
-sui client new-address ed25519
-
-# Show currently active wallet address
-sui client active-address
-
-# Request faucet gas (on devnet/testnet)
-sui client faucet
-# or explicitly:
-sui client faucet --address <ACTIVE_ADDRESS>
-
-# Check gas objects / balances
-sui client gas
+sui client new-address ed25519                  # Create a new wallet address
+sui client addresses                            # List local wallet addresses
+sui client active-address                       # Show current active wallet
+sui client switch --address <ADDRESS>           # Switch active wallet address
+sui client envs                                 # Show configured networks
+sui client active-env                           # Show active network
+sui client switch --env devnet                  # Switch network to devnet
+sui client switch --env testnet                 # Switch network to testnet
+sui client faucet                               # Request faucet gas (devnet/testnet)
+sui client faucet --address <ACTIVE_ADDRESS>    # Request faucet for specific address
+sui client gas                                  # Show gas objects / balances
 ```
 
 ---
@@ -2032,22 +2087,17 @@ sui client gas
 # Network Switching + Publish + Call
 
 ```bash
-# Check configured environments
-sui client envs
-
-# Switch between networks
-sui client switch --env devnet
-sui client switch --env testnet
+sui client envs                                 # Show configured environments
+sui client active-env                           # Confirm active network
+sui client switch --env devnet                  # Switch between networks
+sui client switch --env testnet                 # Switch between networks
 ```
 
 Then deploy and interact:
 
 ```bash
-# Publish the package
-sui client publish --gas-budget 100000000
-
-# Call a function on-chain
-sui client call \
+sui client publish --gas-budget 100000000       # Publish the package
+sui client call \                               # Call a function on-chain
   --package <PACKAGE_ID> \
   --module hero \
   --function mint \
@@ -2055,6 +2105,24 @@ sui client call \
 ```
 
 Then verify the object ID on [suiexplorer.com](https://suiexplorer.com).
+
+---
+
+# Verify On-Chain Objects
+
+Use any explorer to confirm your package, transaction digest, and created object IDs:
+
+- [SuiVision](https://suivision.xyz)
+- [SuiScan](https://suiscan.xyz)
+
+Quick URL patterns (replace placeholders):
+
+```text
+https://suivision.xyz/object/<OBJECT_ID>?network=testnet
+https://suiscan.xyz/testnet/object/<OBJECT_ID>
+```
+
+Tip: always match explorer network (testnet/devnet/mainnet) with your `sui client active-env`.
 
 ---
 
@@ -2094,6 +2162,8 @@ portable proof people can use for jobs and gigs.
 
 ---
 
+---
+
 <!-- _class: day-divider -->
 
 # Day 2
@@ -2112,12 +2182,7 @@ _Module 1_
 
 ---
 
-<!-- _class: cols-2-center -->
-
-# Module 1 Scope and Teaching Lens
-
-<div class="grid">
-<div class="col">
+# Module 1 Scope
 
 ### What This Module Covers
 
@@ -2125,26 +2190,11 @@ Core SDK setup with the Sui gRPC client:
 
 - Client initialization
 - Network gRPC URLs
-- Reading SUI balances
 - Funding from faucet
-
-</div>
-<div class="col">
-
-### What Students Must Learn
-
-For each topic: explain
-**what**,
-**why**,
-**when to use**, and
-**when not to use**.
-
-</div>
-</div>
 
 ---
 
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # What Is the Sui gRPC Client?
 
@@ -2175,7 +2225,26 @@ Benefits:
 
 ---
 
-<!-- _class: cols-2-center -->
+# SuiGrpcClient Initialization
+
+```ts
+import { SuiGrpcClient } from "@mysten/sui/grpc";
+
+const client = new SuiGrpcClient({
+  network: "testnet",
+  baseUrl: "https://fullnode.testnet.sui.io:443",
+});
+```
+
+Build notes:
+
+1. Create one `SuiGrpcClient` instance and reuse it; avoid creating a new client per request.
+2. Bind network URL from environment variables, not inline constants in feature code.
+3. You can print active network + URL at startup for verbosity.
+
+---
+
+<!-- _class: cols-2-left -->
 
 # gRPC URLs and Network Selection
 
@@ -2203,61 +2272,26 @@ Benefits:
 
 ---
 
-# Client Initialization
+# SuiGrpcClient Initialization (Improved)
 
 ```ts
-import { SuiGrpcClient } from "@mysten/sui/grpc";
+const network = process.env.NETWORK;
 
-const client = new SuiGrpcClient({
-  network: "testnet",
-  baseUrl: "https://fullnode.testnet.sui.io:443",
+const GRPC_URLS = {
+  mainnet: "https://fullnode.mainnet.sui.io:443",
+  testnet: "https://fullnode.testnet.sui.io:443",
+  devnet: "https://fullnode.devnet.sui.io:443",
+};
+
+export const client = new SuiGrpcClient({
+  network,
+  baseUrl: GRPC_URLS[network],
 });
 ```
 
-Build notes:
-
-1. Create one `SuiGrpcClient` instance and reuse it; avoid creating a new client per request.
-2. Bind network URL from environment variables, not inline constants in feature code.
-3. You can print active network + URL at startup for verbosity.
-
 ---
 
-<!-- _class: cols-2-center -->
-
-# Get Balance: What You Read
-
-<div class="grid">
-<div class="col">
-
-### Core Read
-
-`getBalance` returns balance for one `coinType` and one owner address.
-
-`getAllBalances` returns all coin types held by that owner.
-
-```ts
-const balance = await client.core.getBalance({
-  owner: address,
-  coinType: "0x2::sui::SUI",
-});
-```
-
-</div>
-<div class="col">
-
-### What To Note While Building
-
-- `owner` must be a valid Sui address
-- amounts are raw base units (not human decimals); format before displaying in UI
-- `coinType` matters for non-SUI assets
-- handle loading, empty wallet, and error states explicitly in UI
-
-</div>
-</div>
-
----
-
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # Faucet Usage (Dev/Test Only)
 
@@ -2273,7 +2307,7 @@ Use faucet when students need gas to execute on-chain write transactions during 
 </div>
 <div class="col">
 
-### When Not To Use + Build Notes
+### When Not To Use
 
 Do not design production funding flows around faucet calls; faucet exists only for test networks.
 
@@ -2281,9 +2315,21 @@ Take note:
 
 - faucet can rate limit
 - requests can be delayed
-- always verify funding with a balance read before running PTBs
 
 </div>
+</div>
+
+<div style="text-align: left; width: 100%;">
+
+**Quick CLI check:**
+
+```bash
+sui client active-env           # should be devnet or testnet
+sui client active-address       # wallet receiving faucet funds
+sui client faucet               # request gas
+sui client gas                  # confirm gas objects/balance
+```
+
 </div>
 
 ---
@@ -2296,7 +2342,7 @@ _Module 2_
 
 ---
 
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # Module 2
 
@@ -2319,7 +2365,7 @@ How to build write transactions with PTBs, and when PTB is the correct transacti
 
 ---
 
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # How to Read from Chain
 
@@ -2347,7 +2393,7 @@ How to build write transactions with PTBs, and when PTB is the correct transacti
 
 ---
 
-# Read Options That Matter
+# Reads That Matter (for now)
 
 ```ts
 const { response } = await client.stateService.listOwnedObjects({
@@ -2355,14 +2401,21 @@ const { response } = await client.stateService.listOwnedObjects({
   // depends on SDK version/protobuf options:
   // include filters and content flags as needed
 });
+
+const balanceRes = await client.core.getBalance({
+  owner: address,
+  coinType: "0x2::sui::SUI", // optional; defaults to SUI
+});
+
+const objectRes = await client.core.getObject({
+  objectId: "<OBJECT_ID>",
+  options: {
+    showType: true,
+    showOwner: true,
+    showContent: true,
+  },
+});
 ```
-
-What students should notice:
-
-- response size and latency depend on requested fields
-- adding filters reduces client-side parsing work
-- full object content is useful for UI but increases payload size
-- request only data your screen/action requires
 
 ---
 
@@ -2381,7 +2434,7 @@ Why this matters:
 
 ---
 
-<!-- _class: cols-2-center -->
+<!-- _class: cols-2-left -->
 
 # Writing with PTBs
 
@@ -2438,7 +2491,7 @@ Build notes:
 
 ---
 
-# PTB Argument Encoding: `tx.object` vs `tx.pure`
+# PTB Argument Encoding
 
 Use the right argument builder based on the Move function parameter type:
 
@@ -2462,20 +2515,11 @@ tx.moveCall({
 });
 ```
 
-Quick rule:
-
-- If it is an object ID reference, use `tx.object`.
-- If it is plain data, use `tx.pure.<type>`.
-
 ---
 
 # PTB Example: Chaining Returned Objects
 
 ```ts
-import { Transaction } from "@mysten/sui/transactions";
-
-const tx = new Transaction();
-
 // Command 1: create a claim in Pending state
 const pendingClaim = tx.moveCall({
   target: "0xabc::proof_of_work::submit_claim",
@@ -2540,11 +2584,11 @@ _Module 3_
 
 # Module 3 Try-It-Yourself Commands
 
-Scaffold a new app from the MystenLabs Sui dApp Next.js template:
+Scaffold a new app from the MystenLabs Sui dApp Vite.js template:
 
 ```bash
-npx create-dapp@latest my-sui-dapp --template nextjs
-cd my-sui-dapp
-npm install
-npm run dev
+bun create @mysten/dapp@latest
+cd counter-dapp
+bun install
+bun run dev
 ```
