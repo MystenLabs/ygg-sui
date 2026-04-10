@@ -8,11 +8,11 @@ Build and publish a small Move package that proves you can go from local develop
 
 ### What to Submit (for interested students)
 
-Your published package ID submitted in the messenger group chat with the format
+Your published package ID submitted in the messenger group chat "Day 1 homework" with the format
 
 <title> - <package_id>
 
-Interesting ones will be shown at the start of Day 2.
+Interesting ones will get a shout out on day 2
 
 ### Passing Criteria
 
@@ -93,7 +93,7 @@ suiscan.xyz or suivision.xyz
 
 _Because you're a chad._
 
-Choose at least **one** stretch goal (or complete all three).
+Choose at least **one** stretch goal (or complete all).
 
 ---
 
@@ -106,18 +106,7 @@ Deliver a simple on-chain counter package:
 - decrement counter
 - reset counter
 - publish package and run at least two calls on devnet/testnet
-
----
-
-# Build a Waitlist / Whitelisting Service
-
-Deliver an allowlist module with basic access control:
-
-- store whitelist entries in on-chain state
-- add/remove addresses
-- expose a function `is_whitelisted(address)`
-- demonstrate one authorized path and one unauthorized path
-- publish and verify the state object on explorer
+- submit on messenger group chat "Day 1 homework" `<counter> - <package_id>`
 
 ---
 
@@ -130,3 +119,25 @@ Mint a basic Hero NFT with pseudo-randomized metadata:
 - mint NFT and return/store object
 - publish package and mint at least one NFT on devnet/testnet
 - verify minted object via explorer link
+- submit on messenger group chat "Day 1 homework" `<nft> - <package_id>`
+
+---
+
+# Build a Passport that collects stamps whenever you go through immigration
+
+Deliver a passport that collects stamps, everytime the "pass through immigration" is called.
+
+- should be able to mint passport
+- a function to 'go through immigration'
+- a person can only mint 1 passport
+- a person shouldnt be able to sell/transfer the passport. Should be soulbound
+- submit on messenger group chat "Day 1 homework" `<passport> - <package_id>`
+
+---
+
+# Build whatever. Make this contract do something interesting. Get creative.
+
+- You earn bragging rights if you can wow me
+- submit on messenger group chat "Day 1 homework" `<your own title> - <package_id>`
+
+---

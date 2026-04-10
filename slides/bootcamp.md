@@ -1565,7 +1565,9 @@ Only references (`&` / `&mut`) can end without explicit consume logic.
 ```rust
 // GOOD: moved object is transferred
 public fun send_hero(hero: Hero, to: address) {
-    transfer::public_transfer(hero, to);
+    transfer::public_transfer(hero, to); // send to addr
+    transfer::transfer(hero, to); // send to addr
+    transfer::share_object(hero); // convert into shared object
 }
 
 // BAD: moved object is never consumed
