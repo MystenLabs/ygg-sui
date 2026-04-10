@@ -6,6 +6,7 @@ footer: "Sui & Move Bootcamp"
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;700&display=swap');
 
 section {
   background: #000000 !important;
@@ -455,7 +456,69 @@ section.day-divider p {
   font-size: 20px;
   max-width: 60%;
 }
+
+/* gm */
+section.gm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+section.gm p {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 180px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* single image slide */
+section.keylandmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 40px;
+}
+
+section.keylandmark p {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+section.keylandmark img {
+  max-width: 100%;
+  max-height: 640px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
 </style>
+
+<!-- _class: gm -->
+
+Gm.
+
+---
+
+<!-- _class: keylandmark -->
+
+![](./assets/keylandmark-1.png)
+
+---
+
+<!-- _class: keylandmark -->
+
+![](./assets/keylandmark-2.png)
+
+---
+
+<!-- _class: keylandmark -->
+
+![](./assets/keylandmark-3.png)
+
+---
 
 <!-- _class: lead -->
 
@@ -478,7 +541,7 @@ _Publishing your first move package_
 
 - Module 1: Sui, Move, and objects
 - Module 2: Move Fundamentals & Syntax
-- Module 3: Structs, Ownership, & Abilities
+- Module 3: Abilities & Patterns
 - Module 4: Test Modules
 - Module 5: Deployment & CLI
 - Hackathon Reveal + Homework
@@ -635,51 +698,14 @@ Decentralized **blob storage** network — cheap, durable large files with **onc
 
 <!-- _class: cols-2-left -->
 
-# Account Model vs Object Model
-
-_Why Sui is different from other blockchains?_
-
-<div class="grid">
-<div class="col">
-
-### Ethereum-style (account-centric)
-
-- state is attached to accounts and contract storage slots
-- balances and mappings are looked up from shared global state
-- common pattern: "read account/storage, update value, write back"
-
-```text
-address -> contract storage -> balances[address] = amount
-```
-
-</div>
-<div class="col">
-
-### Sui (object-centric)
-
-- assets are first-class on-chain objects with IDs
-- ownership is explicit: address-owned, shared, or immutable
-- transactions directly use object references as inputs/outputs
-
-```text
-object_id -> typed object -> owner + data + version
-```
-
-</div>
-</div>
-
----
-
-<!-- _class: cols-2-left -->
-
-# Assets (traditionally, vs the Sui way)
+# Accounts vs Objects - an analogy
 
 _From bank balances to physical items_
 
 <div class="grid">
 <div class="col">
 
-### Bank balance - Traditional
+### Bank balance - Account
 
 **Alice** — she only ever sees an app. The “money” lives elsewhere.
 
@@ -718,6 +744,35 @@ _From bank balances to physical items_
 ```
 
 > **You hold the money — not a story about a balance.**
+
+</div>
+</div>
+
+---
+
+<!-- _class: cols-2-left -->
+
+# Account Model vs Object Model
+
+_Why Sui is different from other blockchains?_
+
+<div class="grid">
+<div class="col">
+
+### Ethereum-style (account-centric)
+
+- state is attached to accounts and contract storage slots
+- balances and mappings are looked up from shared global state
+- common pattern: "read account/storage, update value, write back"
+
+</div>
+<div class="col">
+
+### Sui (object-centric)
+
+- assets are first-class on-chain objects with IDs
+- ownership is explicit: address-owned, shared, or immutable
+- transactions directly use object references as inputs/outputs
 
 </div>
 </div>
@@ -781,7 +836,7 @@ _Security through ownership_
 
 ---
 
-# Why Objects Are Composable
+# Objects Are Composable
 
 You can **wrap objects inside objects** to model nested rights and workflows.
 
@@ -880,7 +935,7 @@ Design rule: keep state owned by default; introduce shared objects only for real
 
 # Module 1 Quiz — Scenario 1
 
-You are building a peer-to-peer game item marketplace.
+You are building a peer-to-peer item marketplace.
 
 A teammate proposes:
 "Let's store all listings in one shared global object so querying is easy."
@@ -1048,18 +1103,37 @@ public struct Hero has key, store {
 ```
 
 ```rust
-public fun mint_hero(name: String, ctx: &mut TxContext): Hero {
+public fun mint_hero(name: String, ctx: &mut TxContext) {
     Hero {
         id: object::new(ctx), // runtime generates unique object ID
         name,
         level: 1,
     }
+    transfer::public_transfer(hero, tx_context::sender(ctx));
 }
 ```
 
 - `struct` only defines the data model/type.
 - `object::new(ctx)` is called at creation time to produce a fresh `UID`.
 - `ctx` (`&mut TxContext`) is injected by the runtime per transaction.
+
+---
+
+# Unpacking a Struct
+
+Unpacking destructures fields out of a value **by consuming it**.
+
+```rust
+public fun burn_hero(hero: Hero) {
+    let Hero { id, name: _ } = hero;
+    object::delete(id);
+}
+```
+
+After unpacking, `hero` no longer exists as a whole value (ownership moved to fields).
+
+Real-life use case: **account closure / object burn**.
+When a profile or membership is deactivated, unpack to access `id` and delete the object cleanly.
 
 ---
 
@@ -1107,7 +1181,6 @@ let mut n = 0;
 loop {
     if (n == 5) break;
     n = n + 1;
-    TODO check if this is correect or we need asterisk reference
 };
 ```
 
@@ -1531,24 +1604,6 @@ Rule: every by-value resource must end as return, transfer/store, or explicit de
 
 ---
 
-# Unpacking a Struct
-
-Unpacking destructures fields out of a value **by consuming it**.
-
-```rust
-public fun burn_hero(hero: Hero) {
-    let Hero { id, name: _ } = hero;
-    object::delete(id);
-}
-```
-
-After unpacking, `hero` no longer exists as a whole value (ownership moved to fields).
-
-Real-life use case: **account closure / object burn**.
-When a profile or membership is deactivated, unpack to access `id` and delete the object cleanly.
-
----
-
 # Module 2 Quiz — Scenario 1
 
 You are designing an object for proof-of-work records:
@@ -1586,13 +1641,13 @@ Another proposes:
 
 <!-- _class: cols-2-center -->
 
-# Structs & Abilities
+# Abilities & Patterns
 
 _Module 3 — Ownership Semantics_
 
 ---
 
-# Module 3 Learning Frame
+# Ability
 
 Abilities are not syntax decoration; they are security boundaries.
 
@@ -1633,7 +1688,7 @@ If a type lacks `store`, users cannot use `public_transfer`, and only the creato
 # Ability: `store` — What Is Possible
 
 - child can be wrapped by persistant parent object, ONLY if child has `store`
-- `transfer::public_transferred` can only happen on objects that has `store`
+- `transfer::public_transfer` can only happen on objects that has `store`
 - objects without store can ONLY be transferred by `transfer::transfer`
 
 ---
