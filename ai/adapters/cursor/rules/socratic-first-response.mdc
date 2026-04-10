@@ -1,0 +1,10 @@
+---
+description: Cursor adapter points to canonical Socratic rule
+alwaysApply: true
+---
+
+# Cursor Adapter
+
+Load canonical rule:
+
+- `ai/core/socratic-first-response.md`

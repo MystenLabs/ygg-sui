@@ -1,0 +1,19 @@
+version: 1
+adapters:
+  claude:
+    entrypoint: CLAUDE.md
+    adapter_path: ai/adapters/claude/CLAUDE.md
+    loads:
+      - ai/core/socratic-first-response.md
+  cursor:
+    entrypoint: .cursor/rules/socratic-first-response.mdc
+    adapter_path: ai/adapters/cursor/rules/socratic-first-response.mdc
+    loads:
+      - ai/core/socratic-first-response.md
+  codex:
+    entrypoints:
+      - AGENTS.md
+      - CODEX.md
+    adapter_path: ai/adapters/codex/AGENTS.md
+    loads:
+      - ai/core/socratic-first-response.md

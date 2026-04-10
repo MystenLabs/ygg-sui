@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: socratic-first-response
+    canonical_path: ai/core/socratic-first-response.md
+    owner: bootcamp-maintainers
+    status: active
+    applies_to:
+      - claude
+      - cursor
+      - codex
