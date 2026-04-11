@@ -1664,9 +1664,7 @@ In Sui, the four you must reason about first are:
 
 # Ability: `key`
 
-Defines an on-chain object with identity (`UID`).
-
-Use when the value itself should exist as a first-class object.
+Defines an on-chain top-level object with identity (`UID`).
 
 Correct:
 
@@ -1681,7 +1679,7 @@ Wrong:
 
 # Ability: `store`
 
-`store` controls whether a value can safely live inside persistent state (on chain).
+`store` controls whether a value can be embedded in other persistent on-chain state and publicly transferred.
 
 If a type lacks `store`, users cannot use `public_transfer`, and only the creator module can transfer it.
 
@@ -1778,22 +1776,7 @@ Abilities are your first security layer, not just syntax decoration.
 
 # What Is An OTW?
 
-**OTW (one-time witness)** — a special marker type that proves: _“this code is running in the module’s **first** transaction (publish), not later.”_ The runtime hands you **exactly one** value of that type, only in `init`.
-
-**Rules (Sui Move):**
-
-- **Name:** the struct must match the **module’s name** in **ALL_CAPS** (same spelling as the last segment of `module a::b::name` → `NAME`).
-- **Abilities:** must have **`drop`** (and typically nothing else on the witness itself).
-- **Where it appears:** only as the first argument to **`init(otw: YOUR_OTW, ctx: &mut TxContext)`** — you do not construct it by hand elsewhere; the system supplies it once at publish.
-- **Framework check:** APIs that require a real OTW use **`types::is_one_time_witness(&otw)`** — arbitrary structs you mint yourself will **not** pass.
-
-Empty witness is fine: `public struct MYMOD has drop {}` or `public struct MYMOD() has drop {}`.
-
----
-
-# OTW → `Publisher` Authority
-
-The OTW is **consumed** when you turn it into durable **publisher** proof: a **`sui::package::Publisher`** object (`key` + `store`) that records **which package and module** published a type. Other code passes **`&Publisher`** into APIs that must only trust the real publisher (`from_module` / `from_package` checks).
+**OTW (one-time witness)** — a special pattern that proves: _“this code is running in the module’s **first** transaction (publish), not later.”_ The runtime hands you **exactly one** value of that type, only in `init()`.
 
 ```rust
 module demo::thing;
@@ -1806,10 +1789,16 @@ fun init(otw: THING, ctx: &mut TxContext) {
     package::claim_and_keep(otw, ctx);
 
     // same result below
-    let p = package::claim(otw, ctx);
-    transfer::public_transfer(p, ctx.sender());
+    let publisher = package::claim(otw, ctx);
+    transfer::public_transfer(publisher, ctx.sender());
 }
 ```
+
+---
+
+# OTW → `Publisher` Authority
+
+The OTW is **consumed** when you turn it into durable **publisher** proof: a **`sui::package::Publisher`** object (`key` + `store`) that records **which package and module** published a type. Other code passes **`&Publisher`** into APIs that must only trust the real publisher (`from_module` / `from_package` checks).
 
 ---
 
@@ -1830,6 +1819,35 @@ public fun mint_a_thing(pub: &Publisher, name: String, ctx: &mut TxContext): Thi
 
 ---
 
+# OTW - Rules
+
+**Rules (Sui Move):**
+
+- **Name:** the struct must match the **module’s name** in **ALL_CAPS** (same spelling as the last segment of `module a::b::name` → `NAME`).
+- **Abilities:** must have **`drop`** (and typically nothing else on the witness itself).
+- **Where it appears:** only as the first argument to **`init(otw: YOUR_OTW, ctx: &mut TxContext)`** — you do not construct it by hand elsewhere; the system supplies it once at publish.
+- **Framework check:** APIs that require a real OTW use **`types::is_one_time_witness(&otw)`** — arbitrary structs you mint yourself will **not** pass.
+
+Empty witness is fine: `public struct MYMOD has drop {}` or `public struct MYMOD() has drop {}`.
+
+---
+
+# The Capability Pattern
+
+**Digital authority is a physical asset** you can hold, transfer, or burn.
+
+- A `ManagerCap` is just an object in your wallet
+- Functions gate themselves by requiring it as a parameter
+- Lose the cap — lose the authority. Transfer it — transfer the power.
+
+```rust
+public fun admin_only(_cap: &ManagerCap, /* ... */) {
+    // only callable if caller holds ManagerCap
+}
+```
+
+---
+
 # Soulbound — What & Why
 
 - **Name comes from games:** a _soulbound_ item is **bound to your character** — you can’t trade it, mail it, or flip it on an auction house; it **stays on that identity**.
@@ -1840,7 +1858,7 @@ public fun mint_a_thing(pub: &Publisher, name: String, ctx: &mut TxContext): Thi
 
 ---
 
-# Soulbound — Example (Move)
+# Soulbound — Example
 
 Struct with **`key`** but **no `store`**: mint into the user’s inventory, but **only the module** can relocate it.
 
@@ -1859,22 +1877,6 @@ public fun module_transfer(id: SoulboundID, to: address) {
 ```
 
 `module_transfer` is **your** escape hatch — not something arbitrary callers can do without your logic.
-
----
-
-# The Capability Pattern
-
-**Digital authority is a physical asset** you can hold, transfer, or burn.
-
-- A `ManagerCap` is just an object in your wallet
-- Functions gate themselves by requiring it as a parameter
-- Lose the cap — lose the authority. Transfer it — transfer the power.
-
-```rust
-public fun admin_only(_cap: &ManagerCap, /* ... */) {
-    // only callable if caller holds ManagerCap
-}
-```
 
 ---
 
@@ -2218,6 +2220,11 @@ Your mission: design a system where contribution claims become trusted,
 portable proof people can use for jobs and gigs.
 
 ---
+
+# Homework
+
+Head to `https://github.com/MystenLabs/ygg-sui` clone it and look for slides/homework.pdf
+This repo is fitted with rules and guardrails, conduct your development and prompting inside this repo to build your homework.
 
 ---
 
