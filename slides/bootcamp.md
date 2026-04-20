@@ -502,24 +502,6 @@ Gm.
 
 ---
 
-<!-- _class: keylandmark -->
-
-![](./assets/keylandmark-1.png)
-
----
-
-<!-- _class: keylandmark -->
-
-![](./assets/keylandmark-2.png)
-
----
-
-<!-- _class: keylandmark -->
-
-![](./assets/keylandmark-3.png)
-
----
-
 <!-- _class: lead -->
 
 # Sui & Move Bootcamp
