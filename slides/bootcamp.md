@@ -2228,6 +2228,43 @@ This repo is fitted with rules and guardrails, conduct your development and prom
 
 ---
 
+<!-- _class: gm -->
+
+Gm.
+
+---
+
+<!-- _class: cols-2-left -->
+
+# Day 1 Recap
+
+<div class="grid">
+<div class="col">
+
+### Core Concepts
+
+- **Object-centric state:** apps model state as owned/shared objects, not account balances.
+- **Resource safety:** Move prevents assets from being accidentally copied or dropped.
+- **Object modeling first:** strong initial design reduces downstream complexity in permissions and upgrades.
+- **Data types discipline:** primitives (`u64`, `bool`, `address`), vectors, and custom structs shape function inputs/outputs.
+
+</div>
+<div class="col">
+
+### What You Practiced
+
+- **Move fundamentals:** modules, structs, functions, visibility, and entry points.
+- **Imports and module paths:** use `use` to bring types/functions into scope cleanly.
+- **Dot notation fluency:** call methods/fields correctly in TS SDK and object-centric Move workflows.
+- **Abilities in practice:** `key`, `store`, `copy`, `drop`, and capability-oriented design.
+- **Pattern toolbox:** OTW, capability-based authorization, soulbound object design, and secure transfer rules.
+- **Builder workflow:** write tests, run CLI build/test/publish, and reason from on-chain objects to product logic.
+
+</div>
+</div>
+
+---
+
 <!-- _class: day-divider -->
 
 # Day 2
@@ -2254,7 +2291,6 @@ Core SDK setup with the Sui gRPC client:
 
 - Client initialization
 - Network gRPC URLs
-- Funding from faucet
 
 ---
 
@@ -2265,27 +2301,41 @@ Core SDK setup with the Sui gRPC client:
 <div class="grid">
 <div class="col">
 
-### What
+### Analogy
 
-The TypeScript app (frontend or backend service) uses `SuiGrpcClient` to send requests to a Sui fullnode.
+Think of a bank branch:
 
-A fullnode is a Sui node that stores blockchain state and exposes APIs to read data and submit signed transactions.
+- you = customer
+- `SuiGrpcClient` = bank teller you speak to
+- fullnode = branch system the teller uses to check account records
+- validators = head-office team that officially approves and records transfers
+
+Key idea: you usually speak to the **teller first** (client/fullnode path), not directly to head office (validators).
 
 </div>
 <div class="col">
 
-### Benefits
+### Simple Flow
 
-Benefits:
-
-- typed request/response objects in TypeScript
-- one client handles both reads (`client.core.getBalance`, `client.core.getObject`) and writes (`client.core.executeTransaction`)
-- easy integration with wallet sign flow for user-authorized writes
+```text
+[Your App]
+   |
+   | SuiGrpcClient
+   v
+[Fullnode gRPC API]
+   | \
+   |  \--> READS: return on-chain data
+   |
+   \----> WRITES: forward signed tx
+                 -> Validators execute + agree
+                 -> Chain state updates
+                 -> Result comes back via fullnode
+```
 
 </div>
 </div>
 
-\*Do not query fullnodes for every dashboard render at scale; use an indexer or backend cache for analytics-heavy views.
+\*At scale, avoid querying fullnodes for every dashboard refresh; use an indexer or backend cache for analytics-heavy views.
 
 ---
 
@@ -2352,49 +2402,6 @@ export const client = new SuiGrpcClient({
   baseUrl: GRPC_URLS[network],
 });
 ```
-
----
-
-<!-- _class: cols-2-left -->
-
-# Faucet Usage (Dev/Test Only)
-
-<div class="grid">
-<div class="col">
-
-### Why Use Faucet
-
-Faucet sends free testnet/devnet SUI gas coins to a wallet address.
-
-Use faucet when students need gas to execute on-chain write transactions during exercises.
-
-</div>
-<div class="col">
-
-### When Not To Use
-
-Do not design production funding flows around faucet calls; faucet exists only for test networks.
-
-Take note:
-
-- faucet can rate limit
-- requests can be delayed
-
-</div>
-</div>
-
-<div style="text-align: left; width: 100%;">
-
-**Quick CLI check:**
-
-```bash
-sui client active-env           # should be devnet or testnet
-sui client active-address       # wallet receiving faucet funds
-sui client faucet               # request gas
-sui client gas                  # confirm gas objects/balance
-```
-
-</div>
 
 ---
 
@@ -2473,10 +2480,8 @@ const balanceRes = await client.core.getBalance({
 
 const objectRes = await client.core.getObject({
   objectId: "<OBJECT_ID>",
-  options: {
-    showType: true,
-    showOwner: true,
-    showContent: true,
+  include: {
+    content: true,
   },
 });
 ```
@@ -2656,3 +2661,15 @@ cd counter-dapp
 bun install
 bun run dev
 ```
+
+---
+
+# Hackathon
+
+1. Search for YGG code camp on deepsurge.xyz > hackathon
+2. Ensure you have a pitchdeck.pdf in your github repo
+3. Ensure you have your smart contract code in your github repo
+4. Ensure your user facing application source code is in your github repo
+5. Upload your github url on deepsurge.xyz
+6. Focus on you move contract and pitch deck, we will not focus on how good looking your UI is. Your UI can be black and white. It does not matter!
+7. 3.30pm cut off
